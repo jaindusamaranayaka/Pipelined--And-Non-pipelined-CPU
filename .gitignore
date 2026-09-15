@@ -1,0 +1,18 @@
+# Quartus Prime build & temporary directories
+db/
+incremental_db/
+output_files/
+hc_output/
+.qws
+*.bak
+
+# Simulation temporary files & waveform dumps
+*.vcd
+*.fst
+obj_dir/
+sim/
+
+# OS / Editor junk
+.DS_Store
+Thumbs.db
+*.swp
