@@ -8,19 +8,20 @@ module Pcpu (
     logic [7:0]  pc;
     logic [15:0] regs [16];
 
-    localparam JNZ = 4'd6;
+    localparam BEQ = 4'd10;
+    localparam BNQ = 4'd11;
 
     logic [23:0] fetch_out;
     logic [23:0] buf1_out;
-    logic [3:0]  de_opcode, de_rs1, de_rs2, de_rd, de_reg;
+    logic [3:0]  de_instruction, de_function, de_rs1, de_rs2, de_rd, de_reg;
     logic [7:0]  de_addr, de_pc;
-    logic [23:0] de_bundle;
-    logic [23:0] buf2_out;
+    logic [27:0] de_bundle;
+    logic [27:0] buf2_out;
     logic [23:0] exec_out;
     logic [7:0]  ex_dmem_addr;
     logic [15:0] ex_dmem_wdata;
     logic        ex_dmem_wen;
-    logic [3:0]  ex_opcode;
+    logic [3:0]  ex_function;
     logic [7:0]  ex_pc;
     logic [23:0] buf3_out;
     logic [3:0]  wb_rd, wb_opcode;
@@ -46,7 +47,8 @@ module Pcpu (
     Pdecode decode (
         .buf1_in    (buf1_out),
         .decode_out (de_bundle),
-        .opcode     (de_opcode),
+        .instruction (de_instruction),
+        .function_code (de_function),
         .i_rs1      (de_rs1),
         .i_rs2      (de_rs2),
         .i_rd       (de_rd),
@@ -55,7 +57,7 @@ module Pcpu (
         .pc_out     (de_pc)
     );
 
-    Pbuffer #(.WIDTH(24)) buffer2 (
+    Pbuffer #(.WIDTH(28)) buffer2 (
         .clk      (clk),
         .reset    (reset),
         .data_in  (de_bundle),
@@ -64,14 +66,14 @@ module Pcpu (
 
     Pexecute execute (
         .buf2_in    (buf2_out),
-        .rs1_val    (regs[buf2_out[7:4]]),
-        .rs2_val    (regs[buf2_out[11:8]]),
+        .rs1_val    (regs[buf2_out[11:8]]),
+        .rs2_val    (regs[buf2_out[7:4]]),
         .dmem_rdata (dmem_rdata),
         .dmem_addr  (ex_dmem_addr),
         .dmem_wdata (ex_dmem_wdata),
         .dmem_wen   (ex_dmem_wen),
         .exec_out   (exec_out),
-        .opcode_out (ex_opcode),
+        .function_out (ex_function),
         .pc_out     (ex_pc)
     );
 
@@ -99,7 +101,8 @@ module Pcpu (
             pc <= 8'b0;
             for (int i = 0; i < 16; i++) regs[i] <= '0;
         end else begin
-            if ((ex_opcode == JNZ) && (regs[buf2_out[3:0]] != 16'h0))
+            if (((ex_function == BEQ) && (regs[buf2_out[11:8]] == regs[buf2_out[7:4]])) ||
+                ((ex_function == BNQ) && (regs[buf2_out[11:8]] != regs[buf2_out[7:4]])))
                 pc <= ex_pc;
             else
                 pc <= pc + 8'b1;

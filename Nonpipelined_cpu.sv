@@ -1,4 +1,4 @@
-module Nonpipelined_cpu (
+module Nonpipelined_git cpu (
   input  logic        clk, reset,
   output logic [7 :0] imem_addr,  dmem_addr,
   input  logic [15:0] imem_rdata, dmem_rdata,
